@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/jrcamenzuli/coinspot-trader/coinspot"
+	"github.com/jrcamenzuli/coinspot-trader/trader"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,12 +21,8 @@ func main() {
 	}
 
 	api := coinspot.NewCoinSpotApi(key, secret)
-	balances, err := api.ListBalances()
-	if err != nil {
-		panic(err)
-	}
-	log.Infof("%+v", balances)
-	log.Infof("%+v", balances.Balances[2])
-	log.Infof("%+v", balances.Balances[2]["DOGE"])
-	log.Infof("%+v", balances.Balances[2]["DOGE"].AudBalance)
+	trader := new(trader.Trader)
+	trader.Api = api
+
+	trader.Run()
 }

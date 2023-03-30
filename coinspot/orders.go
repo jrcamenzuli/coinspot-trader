@@ -94,10 +94,16 @@ type BalanceResponse struct {
 	Rate       float64 `json:"rate"`
 }
 
-type ListBalancesResponse struct {
+type ListBalancesResponse1 struct {
 	Status   string                       `json:"status"`
 	Message  string                       `json:"message"`
 	Balances []map[string]BalanceResponse `json:"balances"`
+}
+
+type ListBalancesResponse struct {
+	Status   string                     `json:"status"`
+	Message  string                     `json:"message"`
+	Balances map[string]BalanceResponse `json:"balances"`
 }
 
 type listMyOrdersRequest struct {

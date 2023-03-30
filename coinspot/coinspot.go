@@ -175,11 +175,25 @@ func (c *coinSpotApi) ListBalances() (*ListBalancesResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ret ListBalancesResponse
-	err = json.Unmarshal(b, &ret)
+	var ret1 ListBalancesResponse1
+	err = json.Unmarshal(b, &ret1)
 	if err != nil {
 		return nil, err
 	}
+
+	balances := make(map[string]BalanceResponse)
+	for _, m := range ret1.Balances {
+		for k, v := range m {
+			balances[k] = v
+		}
+	}
+
+	ret := ListBalancesResponse{
+		Status:   ret1.Status,
+		Message:  ret1.Message,
+		Balances: balances,
+	}
+
 	return &ret, err
 }
 
