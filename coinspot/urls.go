@@ -1,6 +1,6 @@
 package coinspot
 
-const LatestPricesUrl = "https://www.coinspot.com.au/pubapi/latest"
+const LatestPricesUrl = "https://www.coinspot.com.au/pubapi/v2/latest"
 
 const ListOpenOrdersUrl = "https://www.coinspot.com.au/api/orders"
 

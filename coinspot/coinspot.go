@@ -15,6 +15,7 @@ import (
 type CoinspotApi interface {
 	//LatestPrices gets the prices of coins
 	LatestPrices() (*LatestPricesResponse, error)
+	LatestCoinPrices(coinType string) (*LatestPricesResponse2, error)
 	//ListOpenOrders lists all open orders
 	ListOpenOrders(coinType string) (*ListOpenOrdersResponse, error)
 	ListOrderHistory(coinType string) (*ListOrderHistoryResponse, error)
@@ -42,6 +43,25 @@ func (c *coinSpotApi) LatestPrices() (*LatestPricesResponse, error) {
 	var err error
 
 	resp, err := c.httpClient.Get(LatestPricesUrl)
+	if err != nil {
+		return nil, err
+	}
+	bodyString, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(bodyString, &ret)
+
+	return &ret, err
+}
+
+func (c *coinSpotApi) LatestCoinPrices(coinType string) (*LatestPricesResponse2, error) {
+	var ret LatestPricesResponse2
+	var err error
+
+	resp, err := c.httpClient.Get(LatestPricesUrl + "/" + coinType)
 	if err != nil {
 		return nil, err
 	}
