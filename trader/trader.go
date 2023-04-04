@@ -2,6 +2,7 @@ package trader
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/jrcamenzuli/coinspot-trader/coinspot"
@@ -14,9 +15,10 @@ type Coin struct {
 
 type Snapshot struct {
 	cryptos map[string]Coin
+	wallet  map[string]coinspot.BalanceResponse
 }
 
-func (t *Trader) addSnapshot(snapshot Snapshot) {
+func (t *Trader) addSnapshot(snapshot *Snapshot) {
 	if len(t.snapshots) >= t.windowSize {
 		t.snapshots = t.snapshots[1:]
 	}
@@ -27,22 +29,27 @@ type Trader struct {
 	isAlreadyStart bool
 	api            coinspot.CoinspotApi
 	windowSize     int
-	snapshots      []Snapshot
+	snapshots      []*Snapshot
 	tickers        []string
 }
 
 func (t *Trader) Start(api coinspot.CoinspotApi, tickers []string) {
 	if t.isAlreadyStart {
-		log.Error("already initialised")
+		log.Error("already initialized")
 		return
 	}
 	t.isAlreadyStart = true
 	t.api = api
-	t.snapshots = make([]Snapshot, 0)
+	t.snapshots = make([]*Snapshot, 0)
 	t.tickers = tickers
 	t.windowSize = 60
 
-	t.run()
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		<-ticker.C
+		t.loop()
+	}
 }
 
 func (trader *Trader) average(ticker string) float64 {
@@ -54,36 +61,71 @@ func (trader *Trader) average(ticker string) float64 {
 	return average
 }
 
-func (t *Trader) run() {
-	isFirstTime := true
-	for {
-		if !isFirstTime {
-			time.Sleep(10 * time.Second)
-		}
-		isFirstTime = false
+func (t *Trader) getSnapshot() (*Snapshot, error) {
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-		//+
-		balances, err := t.api.ListBalances()
+	snapshot := Snapshot{
+		cryptos: make(map[string]Coin),
+	}
+
+	// get wallet
+	errCh1 := make(chan error, 1)
+	go func() {
+		defer wg.Done()
+		resp, err := t.api.ListBalances()
+		snapshot.wallet = resp.Balances
 		if err != nil {
-			continue
+			errCh1 <- err
+			return
 		}
-		for key, value := range balances.Balances {
-			log.Infof("%s %+v", key, value)
-		}
-		//-
+	}()
 
-		snapshot := Snapshot{cryptos: make(map[string]Coin)}
+	// get coin prices
+	errCh2 := make(chan error, 1)
+	go func() {
+		defer wg.Done()
 		for _, ticker := range t.tickers {
 			resp, err := t.api.LatestCoinPrices(ticker)
 			if err != nil {
-				continue
+				errCh2 <- err
+				return
 			}
 			rate, err := strconv.ParseFloat(resp.Prices.Ask, 64)
 			if err != nil {
-				continue
+				errCh2 <- err
+				return
 			}
 			snapshot.cryptos[ticker] = Coin{rate: rate}
 		}
-		t.addSnapshot(snapshot)
+	}()
+
+	go func() {
+		wg.Wait()
+		close(errCh1)
+		close(errCh2)
+	}()
+
+	for err := range errCh1 {
+		return nil, err
+	}
+
+	for err := range errCh2 {
+		return nil, err
+	}
+
+	return &snapshot, nil
+}
+
+func (t *Trader) loop() {
+	time.Sleep(10 * time.Second)
+	snapshot, err := t.getSnapshot()
+	if err != nil {
+		return
+	}
+	t.addSnapshot(snapshot)
+	log.Infof("There are %d snapshots in the sliding window of size %d.", len(t.snapshots), t.windowSize)
+	if len(t.snapshots) < t.windowSize {
+		return
 	}
 }
