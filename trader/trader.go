@@ -26,29 +26,34 @@ func (t *Trader) addSnapshot(snapshot *Snapshot) {
 }
 
 type Trader struct {
-	isAlreadyStart bool
-	api            coinspot.CoinspotApi
-	windowSize     int
-	snapshots      []*Snapshot
-	tickers        []string
+	isAlreadyStarted bool
+	api              coinspot.CoinspotApi
+	windowSize       int
+	snapshots        []*Snapshot
+	tickers          []string
+	strategy         Strategy
 }
 
 func (t *Trader) Start(api coinspot.CoinspotApi, tickers []string) {
-	if t.isAlreadyStart {
+	if t.isAlreadyStarted {
 		log.Error("already initialized")
 		return
 	}
-	t.isAlreadyStart = true
+	t.isAlreadyStarted = true
 	t.api = api
 	t.snapshots = make([]*Snapshot, 0)
 	t.tickers = tickers
 	t.windowSize = 60
+	t.strategy = &Strategy1{}
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
 		<-ticker.C
-		t.loop()
+		err := t.loop()
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -117,15 +122,24 @@ func (t *Trader) getSnapshot() (*Snapshot, error) {
 	return &snapshot, nil
 }
 
-func (t *Trader) loop() {
+func (t *Trader) loop() error {
 	time.Sleep(10 * time.Second)
 	snapshot, err := t.getSnapshot()
 	if err != nil {
-		return
+		return err
 	}
 	t.addSnapshot(snapshot)
 	log.Infof("There are %d snapshots in the sliding window of size %d.", len(t.snapshots), t.windowSize)
 	if len(t.snapshots) < t.windowSize {
-		return
+		return err
 	}
+	snapshots := make([]Snapshot, len(t.snapshots))
+	for i, p := range t.snapshots {
+		snapshots[i] = *p
+	}
+	t.strategy.Run(snapshots)
+	if err != nil {
+		return err
+	}
+	return nil
 }
