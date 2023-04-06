@@ -22,6 +22,5 @@ func main() {
 
 	api := coinspot.NewCoinSpotApi(key, secret)
 	trader := trader.Trader{}
-	tickers := []string{"BTC", "ETH"}
-	trader.Start(api, tickers)
+	trader.Start(api, "BTC")
 }

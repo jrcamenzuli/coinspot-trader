@@ -14,8 +14,9 @@ type Coin struct {
 }
 
 type Snapshot struct {
-	cryptos map[string]Coin
-	wallet  map[string]coinspot.BalanceResponse
+	time   time.Time
+	coin   Coin
+	wallet map[string]coinspot.BalanceResponse
 }
 
 func (t *Trader) addSnapshot(snapshot *Snapshot) {
@@ -29,12 +30,13 @@ type Trader struct {
 	isAlreadyStarted bool
 	api              coinspot.CoinspotApi
 	windowSize       int
+	snapshotInterval time.Duration
 	snapshots        []*Snapshot
-	tickers          []string
+	coinName         string
 	strategy         Strategy
 }
 
-func (t *Trader) Start(api coinspot.CoinspotApi, tickers []string) {
+func (t *Trader) Start(api coinspot.CoinspotApi, coinName string) {
 	if t.isAlreadyStarted {
 		log.Error("already initialized")
 		return
@@ -42,11 +44,12 @@ func (t *Trader) Start(api coinspot.CoinspotApi, tickers []string) {
 	t.isAlreadyStarted = true
 	t.api = api
 	t.snapshots = make([]*Snapshot, 0)
-	t.tickers = tickers
-	t.windowSize = 60
+	t.coinName = coinName
+	t.windowSize = 1000
+	t.snapshotInterval = 1 * time.Second
 	t.strategy = &Strategy1{}
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	for {
 		<-ticker.C
@@ -57,21 +60,12 @@ func (t *Trader) Start(api coinspot.CoinspotApi, tickers []string) {
 	}
 }
 
-func (trader *Trader) average(ticker string) float64 {
-	average := 0.0
-	for i := 0; i < len(trader.snapshots); i++ {
-		average += trader.snapshots[i].cryptos[ticker].rate
-	}
-	average /= float64(len(trader.snapshots))
-	return average
-}
-
 func (t *Trader) getSnapshot() (*Snapshot, error) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	snapshot := Snapshot{
-		cryptos: make(map[string]Coin),
+		time: time.Now().UTC(),
 	}
 
 	// get wallet
@@ -90,19 +84,17 @@ func (t *Trader) getSnapshot() (*Snapshot, error) {
 	errCh2 := make(chan error, 1)
 	go func() {
 		defer wg.Done()
-		for _, ticker := range t.tickers {
-			resp, err := t.api.LatestCoinPrices(ticker)
-			if err != nil {
-				errCh2 <- err
-				return
-			}
-			rate, err := strconv.ParseFloat(resp.Prices.Ask, 64)
-			if err != nil {
-				errCh2 <- err
-				return
-			}
-			snapshot.cryptos[ticker] = Coin{rate: rate}
+		resp, err := t.api.LatestCoinPrices(t.coinName)
+		if err != nil {
+			errCh2 <- err
+			return
 		}
+		rate, err := strconv.ParseFloat(resp.Prices.Ask, 64)
+		if err != nil {
+			errCh2 <- err
+			return
+		}
+		snapshot.coin = Coin{rate: rate}
 	}()
 
 	go func() {
@@ -123,16 +115,12 @@ func (t *Trader) getSnapshot() (*Snapshot, error) {
 }
 
 func (t *Trader) loop() error {
-	time.Sleep(10 * time.Second)
 	snapshot, err := t.getSnapshot()
 	if err != nil {
 		return err
 	}
 	t.addSnapshot(snapshot)
 	log.Infof("There are %d snapshots in the sliding window of size %d.", len(t.snapshots), t.windowSize)
-	if len(t.snapshots) < t.windowSize {
-		return err
-	}
 	snapshots := make([]Snapshot, len(t.snapshots))
 	for i, p := range t.snapshots {
 		snapshots[i] = *p
