@@ -1,26 +1,27 @@
 package main
 
 import (
-	"os"
+	"flag"
+	"fmt"
 
-	"github.com/jrcamenzuli/coinspot-trader/coinspot"
-	"github.com/jrcamenzuli/coinspot-trader/trader"
+	"github.com/jrcamenzuli/coinspot-trader/publisher"
+	"github.com/jrcamenzuli/coinspot-trader/subscriber"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	log.Info("started coinspot-trader")
+	modePtr := flag.String("mode", "", "mode: publisher or subscriber")
+	flag.Parse()
 
-	// Read key and secret from environment variables
-	key := os.Getenv("COINSPOT_KEY")
-	secret := os.Getenv("COINSPOT_SECRET")
-
-	// Check if key and secret are not empty
-	if key == "" || secret == "" {
-		log.Fatal("COINSPOT_KEY and COINSPOT_SECRET environment variables are not set")
+	switch *modePtr {
+	case "publisher":
+		log.Infof("Starting publisher...")
+		publisher.Start()
+	case "subscriber":
+		log.Infof("Starting subscriber...")
+		subscriber.Start()
+	default:
+		fmt.Println("Invalid mode:", *modePtr)
+		flag.PrintDefaults()
 	}
-
-	api := coinspot.NewCoinSpotApi(key, secret)
-	trader := trader.Trader{}
-	trader.Start(api, "BTC")
 }

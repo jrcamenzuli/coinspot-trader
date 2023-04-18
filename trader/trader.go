@@ -73,11 +73,11 @@ func (t *Trader) getSnapshot() (*Snapshot, error) {
 	go func() {
 		defer wg.Done()
 		resp, err := t.api.ListBalances()
-		snapshot.wallet = resp.Balances
 		if err != nil {
 			errCh1 <- err
 			return
 		}
+		snapshot.wallet = resp.Balances
 	}()
 
 	// get coin prices
