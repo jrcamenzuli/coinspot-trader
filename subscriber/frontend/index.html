@@ -1,15 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>coinspot-trader</title>
-</head>
-<body>
-	<h1>Welcome to my Webpage</h1>
-	<p>This is a paragraph.</p>
-	<ul>
-		<li>List Item 1</li>
-		<li>List Item 2</li>
-		<li>List Item 3</li>
-	</ul>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat App</title>
+  </head>
+  <body>
+    <input type="text" id="messageInput" />
+    <button id="sendButton">Send</button>
+    <ul id="messages"></ul>
+
+    <script>
+      const socket = new WebSocket(`ws://${window.location.host}/ws`);
+      socket.addEventListener("message", (event) => {
+        const message = event.data;
+        const messages = document.getElementById("messages");
+        const li = document.createElement("li");
+        li.appendChild(document.createTextNode(message));
+        messages.appendChild(li);
+      });
+
+      const sendMessage = () => {
+        const input = document.getElementById("messageInput");
+        const message = input.value;
+        input.value = "";
+        socket.send(message);
+      };
+
+      const sendButton = document.getElementById("sendButton");
+      sendButton.addEventListener("click", sendMessage);
+    </script>
+  </body>
 </html>

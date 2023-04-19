@@ -1,17 +1,33 @@
 package subscriber
 
 import (
-	"log"
-	"net/http"
+	"sync"
+
+	"github.com/jrcamenzuli/coinspot-trader/publisher"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/gorilla/websocket"
+)
+
+var (
+	connections = make(map[*websocket.Conn]bool)
+	broadcast   = make(chan []byte)
+	upgrader    = websocket.Upgrader{}
 )
 
 func Start() {
-	fs := http.FileServer(http.Dir("subscriber/frontend"))
-	http.Handle("/", fs)
+	var wg sync.WaitGroup
+	channelSnapshots := make(chan publisher.Snapshot)
 
-	log.Println("The frontend is listening on :8081...")
-	err := http.ListenAndServe(":8081", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	wg.Add(1)
+	go startWebServer(&wg, channelSnapshots)
+	wg.Add(1)
+	go startQueryClient(&wg, channelSnapshots)
+
+	log.Info("Web server started.")
+	log.Info("Query client started.")
+	wg.Wait()
+	log.Info("Web server stopped.")
+	wg.Wait()
+	log.Info("Query client stopped.")
 }
