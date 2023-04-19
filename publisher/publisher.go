@@ -16,7 +16,7 @@ import (
 // write a publisher that uses "cloud.google.com/go/pubsub" and publishes messages to ws://localhost:8080/updates
 const coinName = "BTC"
 const windowSize = 1000
-const snapshotInterval = 10 * time.Second
+const snapshotInterval = 5 * time.Second
 
 var (
 	snapshotsMutex sync.Mutex

@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --target runtime --tag ghcr.io/jrcamenzuli/coinspot-trader:latest
+    - name: Push the Docker image to GitHub
+      run: docker login -u jrcamenzuli -p ${{ secrets.DOCKER_TOKEN_GITHUB }} ghcr.io && docker push ghcr.io/jrcamenzuli/coinspot-trader:latest
