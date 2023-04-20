@@ -9,15 +9,15 @@ import (
 )
 
 func main() {
-	modePtr := flag.String("mode", "", "mode: publisher or subscriber")
+	modePtr := flag.String("mode", "", "mode: coinspot or web")
 	flag.Parse()
 
 	switch *modePtr {
-	case "publisher":
-		log.Infof("Starting publisher...")
+	case "coinspot":
+		log.Infof("Starting Coinspot middle man...")
 		coinspot.Start()
-	case "subscriber":
-		log.Infof("Starting subscriber...")
+	case "web":
+		log.Infof("Starting Web Server...")
 		coinspot.Start()
 	default:
 		fmt.Println("Invalid mode:", *modePtr)
