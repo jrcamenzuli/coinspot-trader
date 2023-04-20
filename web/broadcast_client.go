@@ -1,4 +1,4 @@
-package subscriber
+package web
 
 import (
 	"encoding/json"
@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jrcamenzuli/coinspot-trader/publisher"
+	"github.com/jrcamenzuli/coinspot-trader/coinspot"
 	log "github.com/sirupsen/logrus"
 )
 
-func startBroadcastClient(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot) {
+func startBroadcastClient(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
 	defer wg.Done()
 
 	lastSnapshotTime := time.Unix(0, 0)
@@ -23,7 +23,7 @@ func startBroadcastClient(wg *sync.WaitGroup, channelSnapshots chan publisher.Sn
 			continue
 		}
 
-		var receivedSnapshots []*publisher.Snapshot
+		var receivedSnapshots []*coinspot.Snapshot
 
 		if err := json.NewDecoder(response.Body).Decode(&receivedSnapshots); err != nil {
 			log.Error("Error:", err)

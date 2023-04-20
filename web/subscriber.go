@@ -1,9 +1,9 @@
-package subscriber
+package web
 
 import (
 	"sync"
 
-	"github.com/jrcamenzuli/coinspot-trader/publisher"
+	"github.com/jrcamenzuli/coinspot-trader/coinspot"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/websocket"
@@ -17,7 +17,7 @@ var (
 
 func Start() {
 	var wg sync.WaitGroup
-	channelSnapshots := make(chan publisher.Snapshot)
+	channelSnapshots := make(chan coinspot.Snapshot)
 
 	wg.Add(1)
 	go startWebServer(&wg, channelSnapshots)

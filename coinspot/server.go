@@ -1,4 +1,4 @@
-package publisher
+package coinspot
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jrcamenzuli/coinspot-trader/coinspot"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,7 +20,7 @@ const snapshotInterval = 5 * time.Second
 var (
 	snapshotsMutex sync.Mutex
 	snapshots      []*Snapshot
-	api            coinspot.CoinspotApi
+	api            CoinspotApi
 )
 
 type Coin struct {
@@ -31,7 +30,7 @@ type Coin struct {
 type Snapshot struct {
 	Time   time.Time
 	Coin   Coin
-	Wallet map[string]coinspot.BalanceResponse
+	Wallet map[string]BalanceResponse
 }
 
 func Start() {
@@ -46,7 +45,7 @@ func Start() {
 		log.Fatal("COINSPOT_KEY and COINSPOT_SECRET environment variables are not set")
 	}
 
-	api = coinspot.NewCoinSpotApi(key, secret)
+	api = NewCoinSpotApi(key, secret)
 
 	http.HandleFunc("/query", inboundQuery)
 	go func() { http.ListenAndServe(":8080", nil) }()

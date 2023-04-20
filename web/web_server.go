@@ -1,4 +1,4 @@
-package subscriber
+package web
 
 import (
 	"encoding/json"
@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/jrcamenzuli/coinspot-trader/publisher"
+	"github.com/jrcamenzuli/coinspot-trader/coinspot"
 	log "github.com/sirupsen/logrus"
 )
 
-func startWebServer(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot) {
+func startWebServer(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
 	defer wg.Done()
 	fs := http.FileServer(http.Dir("subscriber/frontend"))
 	http.Handle("/", fs)
@@ -27,7 +27,7 @@ func startWebServer(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot
 	}
 }
 
-func handleCoinspotMessages(channelSnapshots chan publisher.Snapshot) {
+func handleCoinspotMessages(channelSnapshots chan coinspot.Snapshot) {
 	for channelSnapshot := range channelSnapshots {
 		jsonBytes, err := json.Marshal(channelSnapshot)
 		log.Info(channelSnapshot)
