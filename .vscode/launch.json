@@ -5,20 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Publisher",
+            "name": "Launch Coinspot middle man",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "main.go",
-            "args": ["-mode", "publisher"]
+            "args": ["-mode", "coinspot"]
         },
         {
-            "name": "Launch Subscriber",
+            "name": "Launch Web Server",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "main.go",
-            "args": ["-mode", "subscriber"]
+            "args": ["-mode", "web"]
         }
     ]
 }
