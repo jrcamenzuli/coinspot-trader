@@ -48,7 +48,7 @@ func Start() {
 
 	api = coinspot.NewCoinSpotApi(key, secret)
 
-	http.HandleFunc("/query", get)
+	http.HandleFunc("/query", inboundQuery)
 	go func() { http.ListenAndServe(":8080", nil) }()
 
 	ticker := time.NewTicker(snapshotInterval)
@@ -72,18 +72,29 @@ func getLastNSnapshots(snapshots []*Snapshot, n int) []*Snapshot {
 	}
 }
 
-func get(w http.ResponseWriter, r *http.Request) {
+func getSnapshotsFromTime(snapshots []*Snapshot, fromTime time.Time) []*Snapshot {
+	for i, snapshot := range snapshots {
+		if snapshot.Time.After(fromTime) || snapshot.Time.Equal(fromTime) {
+			return snapshots[i:]
+		}
+	}
+	// Return an empty slice if no snapshots are after the given fromTime
+	return []*Snapshot{}
+}
+
+func inboundQuery(w http.ResponseWriter, r *http.Request) {
 	defer snapshotsMutex.Unlock()
 
-	n := r.FormValue("n")
-	intN, err := strconv.Atoi(n)
+	t := r.FormValue("t")
+	intT, err := strconv.ParseInt(t, 10, 64)
 	if err != nil {
-		intN = windowSize
+		intT = 0
 	}
+	fromTime := time.Unix(intT, 0)
 
 	snapshotsMutex.Lock()
 
-	snapshots := getLastNSnapshots(snapshots, intN)
+	snapshots := getSnapshotsFromTime(snapshots, fromTime)
 
 	jsonBytes, err := json.MarshalIndent(snapshots, "", "  ")
 	if err != nil {
@@ -93,7 +104,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprint(w, string(jsonBytes))
 
-	log.Infof("Something requested the latest %d snapshots and got %d in return", intN, len(snapshots))
+	log.Infof("Something requested snapshots from time %s and got %d in return", fromTime, len(snapshots))
 }
 
 func appendSnapshot(snapshot *Snapshot) {
