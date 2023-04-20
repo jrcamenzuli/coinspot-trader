@@ -12,7 +12,7 @@ import (
 
 func startWebServer(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
 	defer wg.Done()
-	fs := http.FileServer(http.Dir("subscriber/frontend"))
+	fs := http.FileServer(http.Dir("web/frontend"))
 	http.Handle("/", fs)
 
 	http.HandleFunc("/ws", handleWebSocket)
