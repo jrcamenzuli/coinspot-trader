@@ -13,7 +13,6 @@ import (
 )
 
 // write a publisher that uses "cloud.google.com/go/pubsub" and publishes messages to ws://localhost:8080/updates
-const coinName = "BTC"
 const windowSize = 1000
 const snapshotInterval = 5 * time.Second
 
@@ -21,6 +20,7 @@ var (
 	snapshotsMutex sync.Mutex
 	snapshots      []*Snapshot
 	api            CoinspotApi
+	coinNames      []string
 )
 
 type Coin struct {
@@ -29,11 +29,13 @@ type Coin struct {
 
 type Snapshot struct {
 	Time   time.Time
-	Coin   Coin
+	Coins  map[string]Coin
 	Wallet map[string]BalanceResponse
 }
 
 func Start() {
+	coinNames = []string{"BTC", "ETH"}
+
 	snapshots = []*Snapshot{}
 
 	// Read key and secret from environment variables
@@ -120,7 +122,8 @@ func makeSnapshot() (*Snapshot, error) {
 	wg.Add(2)
 
 	snapshot := Snapshot{
-		Time: time.Now().UTC(),
+		Time:  time.Now().UTC(),
+		Coins: make(map[string]Coin),
 	}
 
 	// get wallet
@@ -139,17 +142,19 @@ func makeSnapshot() (*Snapshot, error) {
 	errCh2 := make(chan error, 1)
 	go func() {
 		defer wg.Done()
-		resp, err := api.LatestCoinPrices(coinName)
-		if err != nil {
-			errCh2 <- err
-			return
+		for _, coinName := range coinNames {
+			resp, err := api.LatestCoinPrices(coinName)
+			if err != nil {
+				errCh2 <- err
+				return
+			}
+			rate, err := strconv.ParseFloat(resp.Prices.Ask, 64)
+			if err != nil {
+				errCh2 <- err
+				return
+			}
+			snapshot.Coins[coinName] = Coin{Rate: rate}
 		}
-		rate, err := strconv.ParseFloat(resp.Prices.Ask, 64)
-		if err != nil {
-			errCh2 <- err
-			return
-		}
-		snapshot.Coin = Coin{Rate: rate}
 	}()
 
 	go func() {
