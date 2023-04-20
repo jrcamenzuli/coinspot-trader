@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jrcamenzuli/coinspot-trader/coinspot"
+	"github.com/jrcamenzuli/coinspot-trader/web"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,7 +19,7 @@ func main() {
 		coinspot.Start()
 	case "web":
 		log.Infof("Starting Web Server...")
-		coinspot.Start()
+		web.Start()
 	default:
 		fmt.Println("Invalid mode:", *modePtr)
 		flag.PrintDefaults()
