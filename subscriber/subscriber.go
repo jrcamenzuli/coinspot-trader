@@ -22,7 +22,7 @@ func Start() {
 	wg.Add(1)
 	go startWebServer(&wg, channelSnapshots)
 	wg.Add(1)
-	go startQueryClient(&wg, channelSnapshots)
+	go startBroadcastClient(&wg, channelSnapshots)
 
 	log.Info("Web server started.")
 	log.Info("Query client started.")

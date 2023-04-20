@@ -2,35 +2,36 @@ package subscriber
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/jrcamenzuli/coinspot-trader/publisher"
+	log "github.com/sirupsen/logrus"
 )
 
-func startQueryClient(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot) {
+func startBroadcastClient(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot) {
 	defer wg.Done()
 
 	lastSnapshotTime := time.Unix(0, 0)
 
 	for {
-		response, err := http.Get("http://192.168.0.40:10000/query?n=1000")
+		response, err := http.Get("http://192.168.0.40:10000/query?t=" + strconv.Itoa(int(lastSnapshotTime.Unix())))
 		if err != nil {
-			fmt.Println("Error:", err)
+			log.Error("Error:", err)
 			continue
 		}
 
 		var receivedSnapshots []*publisher.Snapshot
 
 		if err := json.NewDecoder(response.Body).Decode(&receivedSnapshots); err != nil {
-			fmt.Println("Error:", err)
+			log.Error("Error:", err)
 			continue
 		}
 
 		for i := 0; i < len(receivedSnapshots); i++ {
-			if receivedSnapshots[i].Time.Before(lastSnapshotTime) {
+			if receivedSnapshots[i].Time.Before(lastSnapshotTime) || receivedSnapshots[i].Time.Equal(lastSnapshotTime) {
 				continue
 			}
 			channelSnapshots <- *receivedSnapshots[i]

@@ -18,8 +18,8 @@ func startWebServer(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot
 	http.HandleFunc("/ws", handleWebSocket)
 
 	log.Println("The frontend is listening on :8081...")
-	go handleMessages()
-	go handleQueryClientMessages(channelSnapshots)
+	go handleWebsocketMessages()
+	go handleBroadcastMessages(channelSnapshots)
 
 	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
@@ -27,9 +27,10 @@ func startWebServer(wg *sync.WaitGroup, channelSnapshots chan publisher.Snapshot
 	}
 }
 
-func handleQueryClientMessages(channelSnapshots chan publisher.Snapshot) {
+func handleBroadcastMessages(channelSnapshots chan publisher.Snapshot) {
 	for channelSnapshot := range channelSnapshots {
 		jsonBytes, err := json.Marshal(channelSnapshot)
+		log.Info(channelSnapshot)
 		if err != nil {
 			log.Error("Error converting snapshots to JSON:", err)
 			return
@@ -44,7 +45,7 @@ func handleQueryClientMessages(channelSnapshots chan publisher.Snapshot) {
 	}
 }
 
-func handleMessages() {
+func handleWebsocketMessages() {
 	for {
 		message := <-broadcast
 		for conn := range connections {
