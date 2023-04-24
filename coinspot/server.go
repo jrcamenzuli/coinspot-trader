@@ -12,8 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// write a publisher that uses "cloud.google.com/go/pubsub" and publishes messages to ws://localhost:8080/updates
-const windowSize = 1000
+const windowSize = 24 * time.Hour
 const snapshotInterval = 5 * time.Second
 
 var (
@@ -111,9 +110,17 @@ func inboundQuery(w http.ResponseWriter, r *http.Request) {
 func appendSnapshot(snapshot *Snapshot) {
 	defer snapshotsMutex.Unlock()
 	snapshotsMutex.Lock()
-	if len(snapshots) >= windowSize {
-		snapshots = snapshots[1:]
+
+	i := 0
+	fromTime := time.Now().UTC()
+	fromTime = fromTime.Add(-windowSize)
+	for ; i < len(snapshots); i++ {
+		if snapshots[i].Time.After(fromTime) {
+			break
+		}
 	}
+
+	snapshots = snapshots[i:]
 	snapshots = append(snapshots, snapshot)
 }
 
@@ -180,7 +187,7 @@ func loop() error {
 		return err
 	}
 	appendSnapshot(snapshot)
-	log.Infof("There are %d snapshots in the sliding window of size %d.", len(snapshots), windowSize)
+	log.Infof("There are %d snapshots in the sliding window of size %s.", len(snapshots), windowSize)
 	snapshots := make([]Snapshot, len(snapshots))
 	for i, p := range snapshots {
 		snapshots[i] = p
