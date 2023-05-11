@@ -13,5 +13,6 @@ FROM alpine:latest as runtime
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /usr/src/app/app ./
+COPY --from=builder /usr/src/app/web/frontend ./web/frontend
 
 CMD ["./app"]
