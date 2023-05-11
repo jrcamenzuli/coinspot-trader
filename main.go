@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jrcamenzuli/coinspot-trader/coinspot"
-	"github.com/jrcamenzuli/coinspot-trader/web"
+	"github.com/jrcamenzuli/coinspot-trader/processor"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,8 +18,8 @@ func main() {
 		log.Infof("Starting Coinspot middle man...")
 		coinspot.Start()
 	case "web":
-		log.Infof("Starting Web Server...")
-		web.Start()
+		log.Infof("Starting Processor...")
+		processor.Start()
 	default:
 		fmt.Println("Invalid mode:", *modePtr)
 		flag.PrintDefaults()

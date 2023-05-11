@@ -1,4 +1,4 @@
-package web
+package processor
 
 import (
 	"encoding/json"
@@ -11,8 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func startBroadcastClient(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
+func startCoinspotQueryClient(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
+	log.Info("Coinspot Query Client started.")
 	defer wg.Done()
+	defer log.Info("Coinspot Query Client stopped.")
 
 	lastSnapshotTime := time.Unix(0, 0)
 
