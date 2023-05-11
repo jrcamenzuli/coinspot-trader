@@ -13,6 +13,6 @@ func startAdvisor(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
 	defer log.Info("Advisor stopped.")
 
 	for channelSnapshot := range channelSnapshots {
-		log.Infof("%+v\n", channelSnapshot.Wallet)
+		log.Infof("%+v\n", channelSnapshot)
 	}
 }
