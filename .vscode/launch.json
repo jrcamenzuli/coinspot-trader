@@ -13,12 +13,12 @@
             "args": ["-mode", "coinspot"]
         },
         {
-            "name": "Launch Web Server (processor)",
+            "name": "Launch Processor",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "main.go",
-            "args": ["-mode", "web"]
+            "args": ["-mode", "processor"]
         }
     ]
 }
