@@ -2,5 +2,7 @@
  :deps {
         clj-http {:mvn/version "3.12.3"}
         clj-time/clj-time {:mvn/version "0.15.2"}
+        cheshire/cheshire {:mvn/version "5.11.0"}
+        org.clojure/core.async {:mvn/version "1.6.673"}
         }
  }
