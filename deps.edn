@@ -1,5 +1,6 @@
-{:deps {
+{
+ :deps {
         clj-http {:mvn/version "3.12.3"}
-        cheshire/cheshire {:mvn/version "5.11.0"}
+        clj-time/clj-time {:mvn/version "0.15.2"}
         }
  }
