@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/jrcamenzuli/coinspot-trader/coinspot"
-	"github.com/jrcamenzuli/coinspot-trader/processor"
+	"github.com/jrcamenzuli/coinspot-trader/client"
+	"github.com/jrcamenzuli/coinspot-trader/server"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,11 +15,11 @@ func main() {
 
 	switch *modePtr {
 	case "coinspot":
-		log.Infof("Starting Coinspot middle man...")
-		coinspot.Start()
-	case "web":
-		log.Infof("Starting Processor...")
-		processor.Start()
+		log.Infof("Starting Server...")
+		server.Start()
+	case "processor":
+		log.Infof("Starting Client...")
+		client.Start()
 	default:
 		fmt.Println("Invalid mode:", *modePtr)
 		flag.PrintDefaults()

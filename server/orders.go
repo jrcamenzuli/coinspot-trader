@@ -1,4 +1,4 @@
-package coinspot
+package server
 
 type BuyOrder struct {
 	Amount float64 `json:"amount"`

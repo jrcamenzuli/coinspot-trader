@@ -1,4 +1,4 @@
-package coinspot
+package server
 
 type CoinPrice struct {
 	Bid  string `json:"bid"`

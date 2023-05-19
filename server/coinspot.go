@@ -1,4 +1,4 @@
-package coinspot
+package server
 
 import (
 	"bytes"

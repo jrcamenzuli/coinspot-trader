@@ -1,4 +1,4 @@
-package coinspot
+package server
 
 const LatestPricesUrl = "https://www.coinspot.com.au/pubapi/v2/latest"
 

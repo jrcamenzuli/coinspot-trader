@@ -1,4 +1,4 @@
-package coinspot
+package server
 
 import (
 	"encoding/json"
@@ -9,33 +9,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jrcamenzuli/coinspot-trader/common"
 	log "github.com/sirupsen/logrus"
 )
 
-const windowSize = 24 * time.Hour
 const snapshotInterval = 5 * time.Second
 
 var (
 	snapshotsMutex sync.Mutex
-	snapshots      []*Snapshot
+	snapshots      []*common.Snapshot
 	api            CoinspotApi
 	coinNames      []string
 )
 
-type Coin struct {
-	Rate float64
-}
-
-type Snapshot struct {
-	Time   time.Time
-	Coins  map[string]Coin
-	Wallet map[string]BalanceResponse
-}
-
 func Start() {
 	coinNames = []string{"BTC", "ETH"}
 
-	snapshots = []*Snapshot{}
+	snapshots = []*common.Snapshot{}
 
 	// Read key and secret from environment variables
 	key := os.Getenv("COINSPOT_KEY")
@@ -62,24 +52,24 @@ func Start() {
 	}
 }
 
-func getLastNSnapshots(snapshots []*Snapshot, n int) []*Snapshot {
+func getLastNSnapshots(snapshots []*common.Snapshot, n int) []*common.Snapshot {
 	if n >= len(snapshots) {
 		// return a copy of the entire slice
-		return append([]*Snapshot{}, snapshots...)
+		return append([]*common.Snapshot{}, snapshots...)
 	} else {
 		// return a copy of the last n elements
-		return append([]*Snapshot{}, snapshots[len(snapshots)-n:]...)
+		return append([]*common.Snapshot{}, snapshots[len(snapshots)-n:]...)
 	}
 }
 
-func getSnapshotsFromTime(snapshots []*Snapshot, fromTime time.Time) []*Snapshot {
+func getSnapshotsFromTime(snapshots []*common.Snapshot, fromTime time.Time) []*common.Snapshot {
 	for i, snapshot := range snapshots {
 		if snapshot.Time.After(fromTime) || snapshot.Time.Equal(fromTime) {
 			return snapshots[i:]
 		}
 	}
 	// Return an empty slice if no snapshots are after the given fromTime
-	return []*Snapshot{}
+	return []*common.Snapshot{}
 }
 
 func inboundQuery(w http.ResponseWriter, r *http.Request) {
@@ -107,13 +97,13 @@ func inboundQuery(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Something requested snapshots from time %s and got %d in return", fromTime, len(snapshots))
 }
 
-func appendSnapshot(snapshot *Snapshot) {
+func appendSnapshot(snapshot *common.Snapshot) {
 	defer snapshotsMutex.Unlock()
 	snapshotsMutex.Lock()
 
 	i := 0
 	fromTime := time.Now().UTC()
-	fromTime = fromTime.Add(-windowSize)
+	fromTime = fromTime.Add(-common.WindowSize)
 	for ; i < len(snapshots); i++ {
 		if snapshots[i].Time.After(fromTime) {
 			break
@@ -124,13 +114,13 @@ func appendSnapshot(snapshot *Snapshot) {
 	snapshots = append(snapshots, snapshot)
 }
 
-func makeSnapshot() (*Snapshot, error) {
+func makeSnapshot() (*common.Snapshot, error) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	snapshot := Snapshot{
+	snapshot := common.Snapshot{
 		Time:  time.Now().UTC(),
-		Coins: make(map[string]Coin),
+		Coins: make(map[string]common.Coin),
 	}
 
 	// get wallet
@@ -142,7 +132,9 @@ func makeSnapshot() (*Snapshot, error) {
 			errCh1 <- err
 			return
 		}
-		snapshot.Wallet = resp.Balances
+		for key, value := range resp.Balances {
+			snapshot.Wallet[key] = common.Wallet(value)
+		}
 	}()
 
 	// get coin prices
@@ -160,7 +152,7 @@ func makeSnapshot() (*Snapshot, error) {
 				errCh2 <- err
 				return
 			}
-			snapshot.Coins[coinName] = Coin{Rate: rate}
+			snapshot.Coins[coinName] = common.Coin{Rate: rate}
 		}
 	}()
 
@@ -187,8 +179,8 @@ func loop() error {
 		return err
 	}
 	appendSnapshot(snapshot)
-	log.Infof("There are %d snapshots in the sliding window of size %s.", len(snapshots), windowSize)
-	snapshots := make([]Snapshot, len(snapshots))
+	log.Infof("There are %d snapshots in the sliding window of size %s.", len(snapshots), common.WindowSize)
+	snapshots := make([]common.Snapshot, len(snapshots))
 	for i, p := range snapshots {
 		snapshots[i] = p
 	}

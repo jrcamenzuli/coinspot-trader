@@ -1,4 +1,4 @@
-package processor
+package client
 
 import (
 	"encoding/json"
@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jrcamenzuli/coinspot-trader/coinspot"
+	"github.com/jrcamenzuli/coinspot-trader/common"
 	log "github.com/sirupsen/logrus"
 )
 
-func startCoinspotQueryClient(wg *sync.WaitGroup, channelSnapshots chan coinspot.Snapshot) {
+func startCoinspotQueryClient(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 	log.Info("Coinspot Query Client started.")
 	defer wg.Done()
 	defer log.Info("Coinspot Query Client stopped.")
@@ -25,7 +25,7 @@ func startCoinspotQueryClient(wg *sync.WaitGroup, channelSnapshots chan coinspot
 			continue
 		}
 
-		var receivedSnapshots []*coinspot.Snapshot
+		var receivedSnapshots []*common.Snapshot
 
 		if err := json.NewDecoder(response.Body).Decode(&receivedSnapshots); err != nil {
 			log.Error("Error:", err)
