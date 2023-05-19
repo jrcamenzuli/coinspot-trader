@@ -40,18 +40,27 @@ func cleanupSnapshots(snapshots []*common.Snapshot) []*common.Snapshot {
 	// Calculate the threshold time
 	thresholdTime := now.Add(-common.WindowSize)
 
+	// Initialize a counter for removed elements
+	var removed int
+
 	// Iterate over the snapshots in reverse order
 	for i := len(snapshots) - 1; i >= 0; i-- {
 		// If the snapshot's time is before the threshold time,
-		// remove it from the list of snapshots
 		if snapshots[i].Time.Before(thresholdTime) {
-			snapshots = append(snapshots[:i], snapshots[i+1:]...)
-		} else {
-			// Since the snapshots are ordered by Time in ascending order,
-			// we can stop iterating as soon as we encounter a snapshot
-			// that is not before the threshold time
-			break
+			// increment the counter and move on to the next snapshot
+			removed++
+			continue
 		}
+		// if the snapshot's time is not before the threshold time,
+		// and some elements were already removed,
+		if removed > 0 {
+			// move the snapshot to its new index
+			snapshots[i+removed] = snapshots[i]
+		}
+	}
+	// If some elements were removed, resize the slice accordingly
+	if removed > 0 {
+		snapshots = snapshots[:len(snapshots)-removed]
 	}
 
 	return snapshots
