@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jrcamenzuli/coinspot-trader/common"
+	"github.com/jrcamenzuli/coinspot-trader/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,45 +24,46 @@ func Start() {
 func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 	log.Info("Processor started.")
 	defer wg.Done()
-	defer log.Info("Advisor stopped.")
-	var snapshots []*common.Snapshot
+	defer log.Info("Processor stopped.")
+	snapshots := []common.Snapshot{}
 
 	for channelSnapshot := range channelSnapshots {
-		log.Debugf("Added snapshot to sliding window: %+v", channelSnapshot)
-		snapshots = append(snapshots, &channelSnapshot)
-		snapshots = cleanupSnapshots(snapshots)
+		snapshots = append(snapshots, channelSnapshot)
+		snapshots = filterByAge(snapshots, 24*time.Hour)
+		log.Debugf("There are a total of %d snapshots.", len(snapshots))
+
+		ages := []time.Duration{1 * time.Minute, 5 * time.Minute, 10 * time.Minute, 30 * time.Minute, 60 * time.Minute}
+		for _, age := range ages {
+			s := filterByAge(snapshots, age)
+			log.Debugf("There are %d snapshots in %+v.", len(s), age)
+			slope := averageSlope(s, "BTC")
+			log.Infof("The BTC rate is changing at %f (AUD/s) over the last %+v", slope, age)
+		}
 	}
 }
 
-func cleanupSnapshots(snapshots []*common.Snapshot) []*common.Snapshot {
-	// Get the current time
-	now := time.Now()
-
-	// Calculate the threshold time
-	thresholdTime := now.Add(-common.WindowSize)
-
-	// Initialize a counter for removed elements
-	var removed int
-
-	// Iterate over the snapshots in reverse order
+func filterByAge(snapshots []common.Snapshot, age time.Duration) []common.Snapshot {
+	now := time.Now().UTC()
+	keep := 0
+	threshold := now.Add(-age)
 	for i := len(snapshots) - 1; i >= 0; i-- {
-		// If the snapshot's time is before the threshold time,
-		if snapshots[i].Time.Before(thresholdTime) {
-			// increment the counter and move on to the next snapshot
-			removed++
-			continue
-		}
-		// if the snapshot's time is not before the threshold time,
-		// and some elements were already removed,
-		if removed > 0 {
-			// move the snapshot to its new index
-			snapshots[i+removed] = snapshots[i]
+		if snapshots[i].Time.After(threshold) {
+			keep++
+		} else {
+			break
 		}
 	}
-	// If some elements were removed, resize the slice accordingly
-	if removed > 0 {
-		snapshots = snapshots[:len(snapshots)-removed]
+	if keep < len(snapshots) {
+		snapshots = snapshots[len(snapshots)-keep:]
 	}
-
 	return snapshots
+}
+
+func averageSlope(snapshots []common.Snapshot, symbol string) float64 {
+	var points []utils.Point
+	for _, snapshot := range snapshots {
+		points = append(points, utils.Point{X: float64(snapshot.Time.UnixNano()) / 1e9, Y: snapshot.Coins[symbol].Rate})
+	}
+	slope := utils.AverageSlope(points)
+	return slope
 }
