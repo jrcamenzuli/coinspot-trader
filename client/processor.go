@@ -27,10 +27,27 @@ func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 	defer log.Info("Processor stopped.")
 	snapshots := []common.Snapshot{}
 
+	// preload snapshots
+	tLast := time.Now()
+	firstTime := true
+	for channelSnapshot := range channelSnapshots {
+		snapshots = append(snapshots, channelSnapshot)
+		now := time.Now()
+		if firstTime {
+			tLast = now
+			firstTime = false
+		}
+		if now.Sub(tLast) > 1*time.Second {
+			break
+		}
+		tLast = now
+	}
+
+	log.Infof("Preloaded %d snapshots.", len(snapshots))
+
 	for channelSnapshot := range channelSnapshots {
 		snapshots = append(snapshots, channelSnapshot)
 		snapshots = filterByAge(snapshots, 24*time.Hour)
-		log.Debugf("There are a total of %d snapshots.", len(snapshots))
 
 		ages := []time.Duration{
 			24 * time.Hour,
