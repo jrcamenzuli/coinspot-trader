@@ -32,7 +32,15 @@ func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 		snapshots = filterByAge(snapshots, 24*time.Hour)
 		log.Debugf("There are a total of %d snapshots.", len(snapshots))
 
-		ages := []time.Duration{1 * time.Minute, 5 * time.Minute, 10 * time.Minute, 30 * time.Minute, 60 * time.Minute}
+		ages := []time.Duration{
+			24 * time.Hour,
+			12 * time.Hour,
+			6 * time.Hour,
+			1 * time.Hour,
+			30 * time.Minute,
+			10 * time.Minute,
+			5 * time.Minute,
+			1 * time.Minute}
 		for _, age := range ages {
 			s := filterByAge(snapshots, age)
 			log.Debugf("There are %d snapshots in %+v.", len(s), age)
