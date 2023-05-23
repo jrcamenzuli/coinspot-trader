@@ -1,10 +1,6 @@
 package common
 
-import (
-	"time"
-)
-
-const WindowSize = 24 * time.Hour
+import "time"
 
 type Coin struct {
 	Rate float64

@@ -1,11 +1,11 @@
 package client
 
 import (
+	"math"
 	"sync"
 	"time"
 
 	"github.com/jrcamenzuli/coinspot-trader/common"
-	"github.com/jrcamenzuli/coinspot-trader/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,6 +19,11 @@ func Start() {
 	go startProcessor(&wg, channelSnapshots)
 
 	wg.Wait()
+}
+
+type Slope struct {
+	age   time.Duration
+	slope float64 // AUD/s
 }
 
 func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
@@ -59,64 +64,40 @@ func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 			10 * time.Minute,
 			5 * time.Minute,
 			1 * time.Minute}
+		maxAge := ages[0]
+		for _, age := range ages {
+			if age > maxAge {
+				maxAge = age
+			}
+		}
+		symbol := "BTC"
+		slopes := []Slope{}
 		for _, age := range ages {
 			s := filterByAge(snapshots, age)
+			log.Debugf("There are %d snapshots in %+v.", len(s), age)
 			if isInvalid(s, age) {
 				log.Infof("Time window %+v is invalid", age)
+				slopes = append(slopes, Slope{age: age, slope: 0.0})
 				continue
 			}
-			log.Debugf("There are %d snapshots in %+v.", len(s), age)
-			slope := averageSlope(s, "BTC")
-			log.Infof("The BTC rate is changing at %f (AUD/s) over the last %+v", slope, age)
+			slope := averageSlope(s, symbol)
+			slopes = append(slopes, Slope{age: age, slope: slope})
+			// log.Infof("The %s rate is changing at %f (AUD/s) over the last %+v", symbol, slope, age)
 		}
-	}
-}
-
-func isInvalid(snapshots []common.Snapshot, expectedAge time.Duration) bool {
-	if len(snapshots) <= 0 {
-		return true
-	}
-	minTime := snapshots[0].Time
-	maxTime := snapshots[0].Time
-	for _, snapshot := range snapshots {
-		if snapshot.Time.After(maxTime) {
-			maxTime = snapshot.Time
+		chance := 0.0
+		sumOfAges := 0.0
+		for _, slope := range slopes {
+			if slope.slope > 0.0 {
+				chance += slope.age.Seconds()
+			}
+			sumOfAges += slope.age.Seconds()
 		}
-		if snapshot.Time.Before(minTime) {
-			minTime = snapshot.Time
+		chance /= sumOfAges
+		coin, ok := snapshots[len(snapshots)-1].Coins[symbol]
+		currentRate := math.NaN()
+		if ok {
+			currentRate = coin.Rate
 		}
+		log.Infof("The chance the rate for %s will increase over the next %+v is %.0f%% and is now %f", symbol, maxAge, chance*100, currentRate)
 	}
-	actualAge := maxTime.Sub(minTime)
-	lowerLimit := expectedAge - 10*time.Second
-	upperLimit := expectedAge + 10*time.Second
-	if (actualAge < lowerLimit) || (actualAge > upperLimit) {
-		return true
-	}
-	return false
-}
-
-func filterByAge(snapshots []common.Snapshot, age time.Duration) []common.Snapshot {
-	now := time.Now().UTC()
-	keep := 0
-	threshold := now.Add(-age)
-	for i := len(snapshots) - 1; i >= 0; i-- {
-		if snapshots[i].Time.After(threshold) {
-			keep++
-		} else {
-			break
-		}
-	}
-	if keep < len(snapshots) {
-		snapshots = snapshots[len(snapshots)-keep:]
-	}
-	return snapshots
-}
-
-func averageSlope(snapshots []common.Snapshot, symbol string) float64 {
-	var points []utils.Point
-	for _, snapshot := range snapshots {
-		points = append(points, utils.Point{X: float64(snapshot.Time.UnixNano()) / 1e9, Y: snapshot.Coins[symbol].Rate})
-	}
-	slope := utils.AverageSlope(points)
-	return slope
 }

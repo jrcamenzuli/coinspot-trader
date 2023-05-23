@@ -13,8 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const snapshotInterval = 5 * time.Second
-
 var (
 	snapshotsMutex sync.Mutex
 	snapshots      []*common.Snapshot
@@ -41,7 +39,7 @@ func Start() {
 	http.HandleFunc("/query", inboundQuery)
 	go func() { http.ListenAndServe(":8080", nil) }()
 
-	ticker := time.NewTicker(snapshotInterval)
+	ticker := time.NewTicker(common.SnapshotInterval)
 	defer ticker.Stop()
 	for {
 		<-ticker.C
@@ -103,7 +101,7 @@ func appendSnapshot(snapshot *common.Snapshot) {
 
 	i := 0
 	fromTime := time.Now().UTC()
-	fromTime = fromTime.Add(-common.WindowSize)
+	fromTime = fromTime.Add(-common.SnapshotWindowSize)
 	for ; i < len(snapshots); i++ {
 		if snapshots[i].Time.After(fromTime) {
 			break
@@ -179,7 +177,7 @@ func loop() error {
 		return err
 	}
 	appendSnapshot(snapshot)
-	log.Infof("There are %d snapshots in the sliding window of size %s.", len(snapshots), common.WindowSize)
+	log.Infof("There are %d snapshots in the sliding window of size %s.", len(snapshots), common.SnapshotWindowSize)
 	snapshots := make([]common.Snapshot, len(snapshots))
 	for i, p := range snapshots {
 		snapshots[i] = p
