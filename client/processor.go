@@ -47,6 +47,7 @@ func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 
 	for channelSnapshot := range channelSnapshots {
 		snapshots = append(snapshots, channelSnapshot)
+		// remove snapshots older than 24 hours
 		snapshots = filterByAge(snapshots, 24*time.Hour)
 
 		ages := []time.Duration{
@@ -60,11 +61,38 @@ func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 			1 * time.Minute}
 		for _, age := range ages {
 			s := filterByAge(snapshots, age)
+			if isInvalid(s, age) {
+				log.Infof("Time window %+v is invalid", age)
+				continue
+			}
 			log.Debugf("There are %d snapshots in %+v.", len(s), age)
 			slope := averageSlope(s, "BTC")
 			log.Infof("The BTC rate is changing at %f (AUD/s) over the last %+v", slope, age)
 		}
 	}
+}
+
+func isInvalid(snapshots []common.Snapshot, expectedAge time.Duration) bool {
+	if len(snapshots) <= 0 {
+		return true
+	}
+	minTime := snapshots[0].Time
+	maxTime := snapshots[0].Time
+	for _, snapshot := range snapshots {
+		if snapshot.Time.After(maxTime) {
+			maxTime = snapshot.Time
+		}
+		if snapshot.Time.Before(minTime) {
+			minTime = snapshot.Time
+		}
+	}
+	actualAge := maxTime.Sub(minTime)
+	lowerLimit := expectedAge - 10*time.Second
+	upperLimit := expectedAge + 10*time.Second
+	if (actualAge < lowerLimit) || (actualAge > upperLimit) {
+		return true
+	}
+	return false
 }
 
 func filterByAge(snapshots []common.Snapshot, age time.Duration) []common.Snapshot {
