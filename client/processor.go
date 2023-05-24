@@ -98,6 +98,6 @@ func startProcessor(wg *sync.WaitGroup, channelSnapshots chan common.Snapshot) {
 		if ok {
 			currentRate = coin.Rate
 		}
-		log.Infof("The chance the rate for %s will increase over the next %+v is %.0f%% and is now %f", symbol, maxAge, chance*100, currentRate)
+		log.Infof("The chance the rate for %s will increase over the next %+v is %.0f%% and is now %f (AUD)", symbol, maxAge, chance*100, currentRate)
 	}
 }

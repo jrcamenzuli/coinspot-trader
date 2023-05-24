@@ -1,6 +1,7 @@
 package client
 
 import (
+	"math"
 	"time"
 
 	"github.com/jrcamenzuli/coinspot-trader/common"
@@ -21,8 +22,8 @@ func isInvalid(snapshots []common.Snapshot, expectedAge time.Duration) bool {
 		}
 	}
 	actualAge := maxTime.Sub(minTime)
-	lowerLimit := expectedAge - 10*time.Second
-	upperLimit := expectedAge + 10*time.Second
+	lowerLimit := expectedAge - time.Duration(math.Max(float64(10*time.Second), float64(expectedAge)*0.01))
+	upperLimit := expectedAge + time.Duration(math.Max(float64(10*time.Second), float64(expectedAge)*0.01))
 	if (actualAge < lowerLimit) || (actualAge > upperLimit) {
 		return true
 	}
