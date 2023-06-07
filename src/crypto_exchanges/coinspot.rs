@@ -31,11 +31,24 @@ pub struct LatestPrices {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct LatestPriceForCoin {
+    status: String,
+    message: Option<String>,
+    prices: Price,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LatestPrice {
     status: String,
     message: Option<String>,
     rate: u64,
     market: String,
+}
+
+#[derive(Debug)]
+pub enum PriceResult {
+    LatestPrices(LatestPrices),
+    LatestPriceForCoin(LatestPriceForCoin),
 }
 
 async fn get<T>(url: &str) -> Result<T, Error>
@@ -49,39 +62,38 @@ where
 pub async fn get_latest_prices(
     cointype: Option<String>,
     markettype: Option<String>,
-) -> Result<LatestPrices, Error> {
-    let url = if let Some(coin) = cointype {
-        if let Some(market) = markettype {
-            format!("https://www.coinspot.com.au/pubapi/v2/latest/{coin}/{market}/")
-        } else {
-            format!("https://www.coinspot.com.au/pubapi/v2/latest/{coin}")
-        }
-    } else {
-        "https://www.coinspot.com.au/pubapi/v2/latest".to_string()
-    };
-    get::<LatestPrices>(&url).await
+) -> Result<PriceResult, Error> {
+    match (cointype, markettype) {
+        (None, None) => get::<LatestPrices>("https://www.coinspot.com.au/pubapi/v2/latest")
+        .await.map(PriceResult::LatestPrices),
+        (None, Some(_)) => todo!(),
+        (Some(coin), None) => get::<LatestPriceForCoin>(&format!("https://www.coinspot.com.au/pubapi/v2/latest/{coin}"))
+        .await.map(PriceResult::LatestPriceForCoin),
+        (Some(coin), Some(market)) => get::<LatestPriceForCoin>(&format!("https://www.coinspot.com.au/pubapi/v2/latest/{coin}/{market}"))
+        .await.map(PriceResult::LatestPriceForCoin),
+    }
 }
 
 pub async fn get_latest_buy_price(
     cointype: String,
     markettype: Option<String>,
-) -> Result<LatestPrices, Error> {
+) -> Result<LatestPrice, Error> {
     let url = if let Some(market) = markettype {
         format!("https://www.coinspot.com.au/pubapi/v2/buyprice/{cointype}/{market}/")
     } else {
         format!("https://www.coinspot.com.au/pubapi/v2/buyprice/{cointype}")
     };
-    get::<LatestPrices>(&url).await
+    get::<LatestPrice>(&url).await
 }
 
 pub async fn get_latest_sell_price(
     cointype: String,
     markettype: Option<String>,
-) -> Result<LatestPrices, Error> {
+) -> Result<LatestPrice, Error> {
     let url = if let Some(market) = markettype {
         format!("https://www.coinspot.com.au/pubapi/v2/sellprice/{cointype}/{market}/")
     } else {
         format!("https://www.coinspot.com.au/pubapi/v2/sellprice/{cointype}")
     };
-    get::<LatestPrices>(&url).await
+    get::<LatestPrice>(&url).await
 }
