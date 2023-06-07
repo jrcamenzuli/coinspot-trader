@@ -1,4 +1,5 @@
 use reqwest::Error;
+use serde::de::DeserializeOwned;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -29,10 +30,58 @@ pub struct LatestPrices {
     prices: HashMap<String, Price>,
 }
 
-pub async fn get_latest_prices() -> Result<LatestPrices, Error> {
-    let resp = reqwest::get("https://www.coinspot.com.au/pubapi/v2/latest")
-        .await?
-        .json::<LatestPrices>()
-        .await?;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LatestPrice {
+    status: String,
+    message: Option<String>,
+    rate: u64,
+    market: String,
+}
+
+async fn get<T>(url: &str) -> Result<T, Error>
+where
+    T: DeserializeOwned,
+{
+    let resp = reqwest::get(url).await?.json().await?;
     Ok(resp)
+}
+
+pub async fn get_latest_prices(
+    cointype: Option<String>,
+    markettype: Option<String>,
+) -> Result<LatestPrices, Error> {
+    let url = if let Some(coin) = cointype {
+        if let Some(market) = markettype {
+            format!("https://www.coinspot.com.au/pubapi/v2/latest/{coin}/{market}/")
+        } else {
+            format!("https://www.coinspot.com.au/pubapi/v2/latest/{coin}")
+        }
+    } else {
+        "https://www.coinspot.com.au/pubapi/v2/latest".to_string()
+    };
+    get::<LatestPrices>(&url).await
+}
+
+pub async fn get_latest_buy_price(
+    cointype: String,
+    markettype: Option<String>,
+) -> Result<LatestPrices, Error> {
+    let url = if let Some(market) = markettype {
+        format!("https://www.coinspot.com.au/pubapi/v2/buyprice/{cointype}/{market}/")
+    } else {
+        format!("https://www.coinspot.com.au/pubapi/v2/buyprice/{cointype}")
+    };
+    get::<LatestPrices>(&url).await
+}
+
+pub async fn get_latest_sell_price(
+    cointype: String,
+    markettype: Option<String>,
+) -> Result<LatestPrices, Error> {
+    let url = if let Some(market) = markettype {
+        format!("https://www.coinspot.com.au/pubapi/v2/sellprice/{cointype}/{market}/")
+    } else {
+        format!("https://www.coinspot.com.au/pubapi/v2/sellprice/{cointype}")
+    };
+    get::<LatestPrices>(&url).await
 }
