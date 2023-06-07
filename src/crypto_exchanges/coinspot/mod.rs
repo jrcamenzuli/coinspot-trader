@@ -2,7 +2,7 @@ pub mod structs;
 
 use reqwest::Error;
 use serde::de::DeserializeOwned;
-use structs::{LatestPrice, LatestPrices, LatestPriceForCoin, TransactionType};
+use structs::{LatestPrice, LatestPrices, LatestPriceForCoin, TransactionType, Orders, OrderType};
 
 const BASE_URL: &str = "https://www.coinspot.com.au/pubapi/v2/";
 
@@ -43,4 +43,18 @@ pub async fn get_latest_transaction_price(
         (Some(market), Some(TransactionType::SELL)) => format!("{BASE_URL}sellprice/{coin_type}/{market}"),
     };
     get::<LatestPrice>(&url).await
+}
+
+pub async fn get_orders(
+    coin_type: String,
+    order_type: OrderType,
+    market_type: Option<String>,
+) -> Result<Orders, Error> {
+    let url = match (order_type, market_type) {
+        (OrderType::OPEN, None) => format!("{BASE_URL}orders/open/{coin_type}"),
+        (OrderType::OPEN, Some(market)) => format!("{BASE_URL}orders/open/{coin_type}/{market}"),
+        (OrderType::COMPLETED, None) => format!("{BASE_URL}orders/completed/{coin_type}"),
+        (OrderType::COMPLETED, Some(market)) => format!("{BASE_URL}orders/completed/{coin_type}/{market}"),
+    };
+    get::<Orders>(&url).await
 }

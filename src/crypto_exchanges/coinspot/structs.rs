@@ -11,6 +11,16 @@ fn de_price<'de, D: Deserializer<'de>>(deserializer: D) -> Result<f64, D::Error>
     })
 }
 
+pub enum TransactionType {
+    BUY,
+    SELL,
+}
+
+pub enum OrderType {
+    OPEN,
+    COMPLETED,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Price {
     #[serde(deserialize_with = "de_price")]
@@ -44,7 +54,19 @@ pub struct LatestPrice {
     market: String,
 }
 
-pub enum TransactionType {
-    BUY,
-    SELL,
+#[derive(Serialize, Deserialize, Debug)]
+struct Order {
+    amount: f64,
+    rate: f64,
+    total: f64,
+    coin: String,
+    market: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Orders {
+    status: String,
+    message: Option<String>,
+    buyorders: Vec<Order>,
+    sellorders: Vec<Order>,
 }
