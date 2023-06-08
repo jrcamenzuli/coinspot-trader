@@ -1,7 +1,8 @@
 use super::structs::{LatestPrice, LatestPrices, LatestPriceForCoin, TransactionType, TransactionType::{BUY,SELL,SWAP}, Orders, OrderType};
-use super::BASE_URL;
 use reqwest::Error;
 use super::get;
+
+const BASE_URL: &str = "https://www.coinspot.com.au/pubapi/v2/";
 
 pub async fn get_latest_prices() -> Result<LatestPrices, Error> {
     get::<LatestPrices>(&format!("{BASE_URL}latest")).await
