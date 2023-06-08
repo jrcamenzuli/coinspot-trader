@@ -14,6 +14,7 @@ fn de_price<'de, D: Deserializer<'de>>(deserializer: D) -> Result<f64, D::Error>
 pub enum TransactionType {
     BUY,
     SELL,
+    SWAP,
 }
 
 pub enum OrderType {

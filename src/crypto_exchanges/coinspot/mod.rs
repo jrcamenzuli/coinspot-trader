@@ -2,7 +2,7 @@ pub mod structs;
 
 use reqwest::Error;
 use serde::de::DeserializeOwned;
-use structs::{LatestPrice, LatestPrices, LatestPriceForCoin, TransactionType, Orders, OrderType};
+use structs::{LatestPrice, LatestPrices, LatestPriceForCoin, TransactionType, TransactionType::{BUY,SELL,SWAP}, Orders, OrderType};
 
 const BASE_URL: &str = "https://www.coinspot.com.au/pubapi/v2/";
 
@@ -37,10 +37,11 @@ pub async fn get_latest_transaction_price(
     let url = match (market_type, transaction_type) {
         (None, None) => todo!(),
         (Some(_), None) => todo!(),
-        (None, Some(TransactionType::BUY)) => format!("{BASE_URL}buyprice/{coin_type}"),
-        (None, Some(TransactionType::SELL)) => format!("{BASE_URL}sellprice/{coin_type}"),
-        (Some(market), Some(TransactionType::BUY)) => format!("{BASE_URL}buyprice/{coin_type}/{market}"),
-        (Some(market), Some(TransactionType::SELL)) => format!("{BASE_URL}sellprice/{coin_type}/{market}"),
+        (None, Some(BUY)) => format!("{BASE_URL}buyprice/{coin_type}"),
+        (None, Some(SELL)) => format!("{BASE_URL}sellprice/{coin_type}"),
+        (Some(market), Some(BUY)) => format!("{BASE_URL}buyprice/{coin_type}/{market}"),
+        (Some(market), Some(SELL)) => format!("{BASE_URL}sellprice/{coin_type}/{market}"),
+        (_,Some(SWAP)) => todo!()
     };
     get::<LatestPrice>(&url).await
 }
