@@ -19,23 +19,6 @@ pub async fn get_latest_price(
     get(&url).await
 }
 
-// pub async fn get_latest_transaction_price(
-//     coin_type: String,
-//     market_type: Option<String>,
-//     transaction_type: Option<TransactionType>,
-// ) -> Result<LatestPrice, Error> {
-//     let url = match (market_type, transaction_type) {
-//         (None, None) => todo!(),
-//         (Some(_), None) => todo!(),
-//         (None, Some(BUY)) => format!("{BASE_URL}buyprice/{coin_type}"),
-//         (None, Some(SELL)) => format!("{BASE_URL}sellprice/{coin_type}"),
-//         (Some(market), Some(BUY)) => format!("{BASE_URL}buyprice/{coin_type}/{market}"),
-//         (Some(market), Some(SELL)) => format!("{BASE_URL}sellprice/{coin_type}/{market}"),
-//         (_,Some(SWAP)) => todo!()
-//     };
-//     get(&url).await
-// }
-
 pub async fn get_latest_buy_price(
     coin_type: String,
 ) -> Result<LatestPrice, Error> {
