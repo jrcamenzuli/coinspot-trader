@@ -44,11 +44,7 @@ async fn main() {
         }
     };
 
-    match public_api::get_latest_transaction_price(
-        String::from("BTC"),
-        None,
-        Some(BUY),
-    )
+    match public_api::get_latest_buy_price(String::from("BTC"))
     .await
     {
         Ok(prices) => {
@@ -61,11 +57,7 @@ async fn main() {
         }
     };
 
-    match public_api::get_latest_transaction_price(
-        String::from("BTC"),
-        None,
-        Some(SELL),
-    )
+    match public_api::get_latest_sell_price(String::from("BTC"))
     .await
     {
         Ok(prices) => {
