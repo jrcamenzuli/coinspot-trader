@@ -30,11 +30,11 @@
 14. Coin Withdrawal
 
 ## Read Only API
-1. Read Only Status Check
-2. Open Market Orders
-3. Completed Market Orders
-4. My Coin Balances
-5. My Coin Balance (Available)
+1. Read Only Status Check ✅
+2. Open Market Orders ✅
+3. Completed Market Orders ✅
+4. My Coin Balances ✅
+5. My Coin Balance (Available) ✅
 6. My Open Market Orders
 7. My Open Limit Orders
 8. My Order History

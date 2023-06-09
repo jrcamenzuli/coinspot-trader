@@ -40,6 +40,20 @@ pub struct LatestPrices {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct MyCoinBalances {
+    status: String,
+    message: Option<String>,
+    balances: HashMap<String, Price>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MyCoinBalance {
+    status: String,
+    message: Option<String>,
+    balance: HashMap<String, Price>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LatestPriceForCoin {
     status: String,
     message: Option<String>,
@@ -70,4 +84,10 @@ pub struct Orders {
     message: Option<String>,
     buyorders: Vec<Order>,
     sellorders: Vec<Order>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Status {
+    status: String,
+    message: String,
 }

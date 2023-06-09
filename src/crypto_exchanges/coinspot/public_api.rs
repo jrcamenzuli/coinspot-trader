@@ -5,7 +5,7 @@ use super::get;
 const BASE_URL: &str = "https://www.coinspot.com.au/pubapi/v2/";
 
 pub async fn get_latest_prices() -> Result<LatestPrices, Error> {
-    get::<LatestPrices>(&format!("{BASE_URL}latest")).await
+    get(&format!("{BASE_URL}latest")).await
 }
 
 pub async fn get_latest_price(
@@ -16,7 +16,7 @@ pub async fn get_latest_price(
         None => format!("{BASE_URL}latest/{coin_type}"),
         Some(market) => format!("{BASE_URL}latest/{coin_type}/{market}"),
     };
-    get::<LatestPriceForCoin>(&url).await
+    get(&url).await
 }
 
 pub async fn get_latest_transaction_price(
@@ -33,7 +33,7 @@ pub async fn get_latest_transaction_price(
         (Some(market), Some(SELL)) => format!("{BASE_URL}sellprice/{coin_type}/{market}"),
         (_,Some(SWAP)) => todo!()
     };
-    get::<LatestPrice>(&url).await
+    get(&url).await
 }
 
 pub async fn get_orders(
@@ -47,5 +47,5 @@ pub async fn get_orders(
         (OrderType::COMPLETED, None) => format!("{BASE_URL}orders/completed/{coin_type}"),
         (OrderType::COMPLETED, Some(market)) => format!("{BASE_URL}orders/completed/{coin_type}/{market}"),
     };
-    get::<Orders>(&url).await
+    get(&url).await
 }
